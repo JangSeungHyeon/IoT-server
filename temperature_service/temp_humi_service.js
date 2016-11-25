@@ -16,6 +16,7 @@ router.use(bodyParser.urlencoded({     //to support URL-encoded bodies (url-enco
 var temperature_value; //온도값//
 var humidity_value; //습도값//
 
+//온도와 습도값을 저장하는 부분//
 router.post('/temp_humi_insert', function(request, response){
     temperature_value = request.body.tempvalue; //전송할 메세지를 받는다.//
     humidity_value = request.body.humivalue;
