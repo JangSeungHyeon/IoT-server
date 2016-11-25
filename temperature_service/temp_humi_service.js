@@ -14,16 +14,18 @@ router.use(bodyParser.urlencoded({     //to support URL-encoded bodies (url-enco
 
 //입력변수//
 var temperature_value; //온도값//
+var humidity_value; //습도값//
 
-router.post('/temp_insert', function(request, response){
+router.post('/temp_humi_insert', function(request, response){
     temperature_value = request.body.tempvalue; //전송할 메세지를 받는다.//
+    humidity_value = request.body.humivalue;
 
-    console.log('input temp value: '+temperature_value);
+    console.log('input temp/humi value: '+temperature_value+'/'+humidity_value);
 
-    INSERT_func(temperature_value, response); //온도값을 저장//
+    INSERT_func(temperature_value, humidity_value, response); //온도값을 저장//
 });
 ////////////////////////////
-function INSERT_func(temperature_value, response)
+function INSERT_func(temperature_value, humidity_value, response)
 {
     //비동기 순차적으로 수행//
     async.waterfall([
@@ -42,24 +44,54 @@ function INSERT_func(temperature_value, response)
 
                     is_success = true; //성공이라 설정//
 
-                    callback(null, is_success, temperature_value); //콜백함수의 인자에 맞추어서 매개변수를 설정//
+                    callback(null, is_success); //콜백함수의 인자에 맞추어서 매개변수를 설정//
                 }
             });
 
             connection.end(); //데이터베이스 작업을 한 이후 반드시 닫아준다.//
+        },
+        //Task 2 : 습도값을 저장//
+        function(is_success, callback)
+        {
+            if(is_success == false) //만약 온도데이터 저장이 실패했을 시 문제가 있으므로 습도는 저장하지 않는다.//
+            {
+                callback(null, is_success); //콜백함수의 인자에 맞추어서 매개변수를 설정//  
+            }
+
+            else
+            {
+                var connection = db_connection_pool(); //DB Connection pool//
+                var is_success = false; //처음 실패라 가정//
+
+                var update_data_array = [humidity_value]; //배열로 만든다.//
+
+                connection.query('update sensorservice set sensor_value=? where sensor_name="humidity_sensor"',update_data_array, function(error, result){
+                    if(error) throw error;
+                    else{
+                        console.log('update success...');
+
+                        is_success = true; //성공이라 설정//
+                    }
+
+                    callback(null, is_success); //콜백함수의 인자에 맞추어서 매개변수를 설정//
+                });
+
+                connection.end(); //데이터베이스 작업을 한 이후 반드시 닫아준다.//
+            }
         }
     ],
     //final Task : 아두이노로 JSON결과 반환//
-    function(callback, is_success, temperature_value)
+    function(callback, is_success)
     {
         console.log('insert success : ' + is_success);
 
-        if(is_success == true) //파일저장 성공//
+        if(is_success == true) //데이터 저장 성공//
         {
             //전송 json객체를 만든다.//
             var result = 
             {
-                'temp_data':temperature_value
+                'temp_data':temperature_value,
+                'humi_data':humidity_value
             }
 
             var trans_objeect = 
@@ -74,7 +106,8 @@ function INSERT_func(temperature_value, response)
             //전송 json객체를 만든다.//
             var result = 
             {
-                'temp_data':temperature_value
+                'temp_data':temperature_value,
+                'humi_data':humidity_value
             }
 
             var trans_objeect = 

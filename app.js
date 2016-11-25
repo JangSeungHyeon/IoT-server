@@ -9,7 +9,7 @@ ex) /service/~(각 파일들에 있는 호출파람)
 */
 /* 센서서비스가 추가되면 라우터 추가 */
 //사용자 정의 모듈 호출(모듈경로)//
-var function_tempservice_route = require('./temperature_service/temp_service');
+var function_tempservice_route = require('./temperature_service/temp_humi_service');
 app.use('/service', function_tempservice_route);
 
 app.listen(3000, function(){
