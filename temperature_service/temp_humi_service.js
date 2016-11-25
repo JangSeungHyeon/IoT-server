@@ -84,7 +84,7 @@ function INSERT_func(temperature_value, humidity_value, response)
     //final Task : 아두이노로 JSON결과 반환//
     function(callback, is_success)
     {
-        console.log('insert success : ' + is_success);
+        console.log('update success : ' + is_success);
 
         if(is_success == true) //데이터 저장 성공//
         {
