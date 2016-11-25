@@ -1,1 +1,17 @@
-console.log('test');
+var express = require('express');
+
+var app = express();
+
+/*
+(/service) 라우터에 위임된 항목 리스트 :
+ex) /service/~(각 파일들에 있는 호출파람)
+1. service/temp_service.js (라우터 경로)
+*/
+/* 센서서비스가 추가되면 라우터 추가 */
+//사용자 정의 모듈 호출(모듈경로)//
+var function_tempservice_route = require('./temperature_service/temp_service');
+app.use('/service', function_tempservice_route);
+
+app.listen(3000, function(){
+    console.log('connected');
+});
