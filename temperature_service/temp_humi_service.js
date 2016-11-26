@@ -26,7 +26,7 @@ router.post('/temp_humi_insert', function(request, response){
 
     console.log('input temp/humi value: '+temperature_value+'/'+humidity_value);
 
-    INSERT_func(temperature_value, humidity_value, response); //온도값을 저장//
+    UPDATE_func(temperature_value, humidity_value, response); //온도값을 저장//
 });
 
 //앱으로 부터 받는 리퀘스트 부분//
@@ -97,7 +97,7 @@ function GET_temp_humi_value(response) //검색 조회//
     });
 }
 ////////////////////////////
-function INSERT_func(temperature_value, humidity_value, response)
+function UPDATE_func(temperature_value, humidity_value, response)
 {
     //비동기 순차적으로 수행//
     async.waterfall([
