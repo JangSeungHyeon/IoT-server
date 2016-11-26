@@ -15,7 +15,10 @@ router.use(bodyParser.urlencoded({     //to support URL-encoded bodies (url-enco
 //입력변수//
 var temperature_value; //온도값//
 var humidity_value; //습도값//
+var get_temperature_value; //온도값 얻기//
+var get_humidity_value; //습도값 얻기//
 
+/** 집안의 private한 정보이기에 다 POST방식으로 한다. **/
 //온도와 습도값을 저장하는 부분//
 router.post('/temp_humi_insert', function(request, response){
     temperature_value = request.body.tempvalue; //전송할 메세지를 받는다.//
@@ -25,6 +28,74 @@ router.post('/temp_humi_insert', function(request, response){
 
     INSERT_func(temperature_value, humidity_value, response); //온도값을 저장//
 });
+
+//앱으로 부터 받는 리퀘스트 부분//
+router.post('/get_temp_humi', function(request, response){
+    console.log('get temperature / humidity');
+    
+    GET_temp_humi_value(response);
+});
+////////////////////////////
+function GET_temp_humi_value(response) //검색 조회//
+{
+    //비동기 순차적으로 수행//
+    async.waterfall([
+        //Task 1 : 온도와 습도값을 가져온다.//
+        function(callback)
+        {
+            var connection = db_connection_pool(); //DB Connection pool//
+            var temperature_value = -1;
+            var humidity_value = -1;
+
+            connection.query('select sensor_value from sensorservice where sensor_name = "temperature_sensor" or sensor_name = "humidity_sensor"', function(error, rows, fields){
+                if(error) throw error;
+                else{
+                    for(var i=0; i<rows.length; i++)
+                    {
+                        console.log('value: '+rows[i].sensor_value);
+
+                        if(i == 0) //온도센서의 경우//
+                        {
+                            temperature_value = rows[i].sensor_value;
+                        }
+
+                        else if(i==1) //습도센서의 경우//
+                        {
+                            humidity_value = rows[i].sensor_value;
+                        }
+                    }
+                }
+
+                callback(null, temperature_value, humidity_value);
+            });
+
+            connection.end();
+        }
+    ],
+    //Final Task : 얻어온 온도와 습도값을 제공한다.//
+    function(callback, temperature_value, humidity_value)
+    {
+        console.log('trans temp_value: '+temperature_value);
+        console.log('trans humi_value: '+humidity_value);
+
+        //전송 json객체를 만든다.//
+        var result = 
+        {
+            'temp_data':temperature_value,
+            'humi_data':humidity_value
+        }
+
+        var trans_objeect = 
+        {
+            'state':'normal',
+            'info': result
+        }
+
+        var trans_json = JSON.stringify(trans_objeect); //json으로 반환//
+
+        response.send(trans_json);
+    });
+}
 ////////////////////////////
 function INSERT_func(temperature_value, humidity_value, response)
 {
