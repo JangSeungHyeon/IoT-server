@@ -28,4 +28,5 @@ app.use('/data', function_data_sensorlist_route);
 
 app.listen(3000, function(){
     console.log('connected');
+    console.log('-----------------------');
 });
