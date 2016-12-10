@@ -14,9 +14,10 @@ router.use(bodyParser.urlencoded({     //to support URL-encoded bodies (url-enco
 
 //입력변수//
 var motor_on_off_flag;
+var motor_name;
 
 /** 집안의 private한 정보이기에 다 POST방식으로 한다. **/
-//가스값을 저장하는 부분//
+//보일러를 on하는 리퀘스트//
 router.post('/boiler_on', function(request, response){
     motor_on_off_flag = request.body.flag;
 
@@ -28,8 +29,7 @@ router.post('/boiler_on', function(request, response){
     //response.send('motor on');
 });
 
-//가스값을 요청하는 부분//
-//앱으로 부터 받는 리퀘스트 부분//
+//보일러를 off하는 리퀘스트//
 router.post('/boiler_off', function(request, response){
     motor_on_off_flag = request.body.flag;
 
@@ -40,12 +40,70 @@ router.post('/boiler_off', function(request, response){
 
     //response.send('motor off');
 });
+
+//아두이노에서 보일러의 상태를 확인하는 리퀘스트//
+router.post('/boiler_status_get', function(request, response)
+{
+    motor_name = request.body.motor_name;
+
+    console.log('['+ motor_name+'] status get for arduino');
+
+    SELECT_status(motor_name, response);
+});
+////////////////////////////
+function SELECT_status(motor_name, response)
+{
+    //비동기 순차적으로 수행//
+    async.waterfall([
+        //Task 1 : 온도값을 저장//
+        function(callback)
+        {
+            var connection = db_connection_pool(); //DB Connection pool//
+            var boiler_object;
+
+            connection.query('select motor_number,motor_name, motor_on_off from motorservice where motor_name = ?',motor_name, function(error, rows, fields){
+                if(error) throw error;
+                else{
+                    var result_object = 
+                    {
+                        'motornumber':rows[0].motor_number,
+                        'motorname':rows[0].motor_name,
+                        'motoronoff':rows[0].motor_on_off
+                    }
+                }
+
+                callback(null, result_object);
+            });
+        }
+    ],
+    //final Task : 아두이노로 JSON결과 반환//
+    function(callback, result_object)
+    {
+        //전송 json객체를 만든다.//
+        var result = 
+        {
+            'status':result_object
+        }
+
+        var trans_objeect = 
+        {
+            'is_success':'normal',
+            'info': result
+        }   
+
+        var trans_json = JSON.stringify(trans_objeect); //json으로 반환//
+
+        response.send(trans_json);
+
+        console.log('-----------------------');
+    });
+}
 ////////////////////////////
 function UPDATE_data(motor_on_off_flag, response)
 {
     //비동기 순차적으로 수행//
     async.waterfall([
-        //Task 1 : 온도값을 저장//
+        //Task 1 : 보일러(모터)의 상태변경 저장//
         function(callback)
         {
             //데이터베이스 연결//
